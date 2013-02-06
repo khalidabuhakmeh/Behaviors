@@ -2,6 +2,7 @@
 using ConsoleApplication3.Core;
 using Raven.Client;
 using Raven.Client.Document;
+using Raven.Imports.Newtonsoft.Json;
 
 namespace ConsoleApplication3
 {
@@ -9,7 +10,7 @@ namespace ConsoleApplication3
     {
         private static readonly IDocumentStore Store = new DocumentStore
         {
-            ConnectionStringName = "RavenDB"
+            ConnectionStringName = "RavenDB",
         }.Initialize();
 
         private static void Main(string[] args)
@@ -51,18 +52,31 @@ namespace ConsoleApplication3
 
     public class Dog
         : Behaviors,
-          IBehavesLike<Car>
+          IBehavesLike<Car>,
+          INamed
     {
         public string Id { get; set; }
         public string Name { get; set; }
     }
 
+    // We need this so RavenDB doesn't freak (StackOverflow exception)
+    [JsonObject(IsReference = true)]
+    public interface INamed
+    {
+        string Name { get; }
+    }
+
     public class Car
     {
+        // Should be the parent
+        public INamed Named { get; set; }
+
         public string Model { get; set; }
         public string Vroom()
         {
-            return "Vrooooooooom!";
+            return Named != null
+                ? string.Format("{0} says Vrooooooooom!", Named.Name)
+                : "Vrooooooooom!";
         }
     }
 }
